@@ -22,7 +22,7 @@ Esta é uma **iniciativa brasileira de aproximação cultural entre o Brasil e o
 6. [Como usar](#-como-usar)
 7. [Interface gráfica](#️-interface-gráfica-painel-web-local)
 8. [Celular por USB](#-celular-por-usb-assistente-de-mesa)
-9. [Nuvem do Ollama (sem GPU)](#️-sem-gpu-nuvem-do-ollama-opcional)
+9. [Nuvem do Ollama (sem GPU) opicional](#️-sem-gpu-nuvem-do-ollama-opcional)
 10. [Atalhos globais no Wayland](#️-atalhos-globais-no-wayland-ubuntugnome)
 11. [Referência da CLI](#-referência-da-cli-itachi-capoeira)
 12. [Configuração](#️-configuração)
