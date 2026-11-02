@@ -89,7 +89,6 @@ Esta versão também recebeu colaboração técnica do **ChatGPT**, em conjunto 
 | 🧠 **Memória curta** | Guarda as últimas interações em `data/memory.json` (escrita atômica) e usa o contexto quando você se refere a algo anterior. |
 | 🎭 **Persona configurável** | Nome, voz, humor, formalidade, entusiasmo, paciência, respostas curtas/longas, uso de termos técnicos. |
 | 🩺 **Health check do Ollama** | A cada 15 min confere o Ollama, tenta reiniciá-lo se cair e **descarrega modelos** se a RAM passar de 85% ou sobrar menos de 2 GB. |
-| 👀 **Monitor proativo** | A cada 30 min avisa (notificação do desktop + voz) sobre contêineres Docker reiniciando, GPU acima de 80 °C e disco acima de 90%. |
 | 🖥️ **Interface gráfica** | Painel web local com recursos, modelos, chat, visão, logs e controles. |
 | 📱 **Celular por USB** | O celular Android vira microfone e alto-falante do PC, sem Wi-Fi e sem nuvem. |
 | ☁️ **Nuvem opcional** | Usa modelos hospedados do Ollama (plano gratuito) quando não há GPU. |
