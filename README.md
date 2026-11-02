@@ -1,4 +1,4 @@
-![Itachi Capoeira](gui/Itachi-em-Ginga-Brasileira.png)
+<img src="gui/Itachi-em-Ginga-Brasileira.png" alt="Itachi Capoeira" width="200">
 
 # 🤖 Itachi Capoeira — Assistente Virtual
 
