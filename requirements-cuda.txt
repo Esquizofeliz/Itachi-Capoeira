@@ -1,0 +1,4 @@
+# Bibliotecas CUDA para o faster-whisper usar a GPU NVIDIA (Linux/Windows x64). Opcional:
+# se falharem, o Whisper roda na CPU automaticamente.
+nvidia-cublas-cu12
+nvidia-cudnn-cu12

@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# Itachi Capoeira Control (Linux/macOS) — atalho para: .venv/bin/python -m itachi_capoeira <comando>
+SRC="$0"
+while [ -h "$SRC" ]; do
+  D="$(cd -P "$(dirname "$SRC")" && pwd)"
+  SRC="$(readlink "$SRC")"
+  case "$SRC" in /*) ;; *) SRC="$D/$SRC" ;; esac
+done
+DIR="$(cd -P "$(dirname "$SRC")" && pwd)"
+PY="$DIR/.venv/bin/python"
+if [ ! -x "$PY" ]; then
+  echo "Ambiente não instalado. Rode primeiro:  bash \"$DIR/install.sh\"" >&2
+  exit 1
+fi
+cd "$DIR" || exit 1
+PYTHONPATH="$DIR${PYTHONPATH:+:$PYTHONPATH}" exec "$PY" -m itachi_capoeira "$@"

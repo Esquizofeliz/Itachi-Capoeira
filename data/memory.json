@@ -1,0 +1,27 @@
+[
+ {
+  "type": "pergunta",
+  "content": "oi",
+  "timestamp": "2026-11-01T22:43:20"
+ },
+ {
+  "type": "resposta",
+  "content": "Resposta: oi",
+  "timestamp": "2026-11-01T22:43:20"
+ },
+ {
+  "type": "tela",
+  "content": "Resposta: q [com imagem]",
+  "timestamp": "2026-11-01T22:43:20"
+ },
+ {
+  "type": "pergunta",
+  "content": "que horas são",
+  "timestamp": "2026-11-01T22:43:20"
+ },
+ {
+  "type": "resposta",
+  "content": "Resposta: que horas são",
+  "timestamp": "2026-11-01T22:43:20"
+ }
+]

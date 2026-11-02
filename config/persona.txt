@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────
+# Personalidade do assistente — edite à vontade (formato CHAVE="valor")
+# Qualquer chave de itachi_capoeira/config.py pode ser colocada aqui também.
+# Ajustes automáticos de hardware ficam em config/local.txt (gerado pelo instalador).
+# ─────────────────────────────────────────────────────────────
+
+NAME="Itachi Capoeira"
+VOICE="pm_santa"          # vozes pt-BR do Kokoro: pm_santa (masc.), pm_alex (masc.), pf_dora (fem.)
+LANGUAGE="pt-BR"
+
+# Personality traits (0-100)
+HUMOR=60
+FORMALITY=40
+ENTHUSIASM=70
+PATIENCE=90
+
+# Response style
+SHORT_RESPONSES=false
+USE_TECHNICAL_TERMS=true
+EXPLAIN_WHILE_DOING=true
+
+# Proactive settings
+PROACTIVE_MODE=true
+PROACTIVE_INTERVAL_MINUTES=30
+NOTIFY_ON_ERRORS=true
+NOTIFY_ON_COMPLETIONS=true
+
+# Memory
+MEMORY_ENABLED=true
+MEMORY_MAX_ITEMS=10
+
+# Palavra de ativação (só funciona com WAKE_WORD_ENABLED=true; o microfone fica ouvindo)
+# Aceita vários nomes separados por vírgula. O Whisper às vezes escreve "Itachi" como "Itaxi".
+# O celular (mobile/Itachi.html) também respeita esta opção: com ela ligada, só responde quando ouvir o nome.
+WAKE_WORD_ENABLED=false
+WAKE_WORDS="itachi,itaxi"
+
+# Teclas de atalho (formato pynput: <f8>, <ctrl>+<alt>+j, <ctrl>+<print_screen> ...)
+HOTKEY_VOICE="<f8>"
+HOTKEY_SCREEN="<f9>"
+HOTKEY_TALK="<f7>"
+HOTKEY_STOP="<f10>"
+
+# Ubuntu/GNOME no Wayland: as teclas acima viram atalhos do desktop (itachi-capoeira up | shortcuts install).
+# Depois de trocar uma tecla, rode: itachi-capoeira shortcuts install
+AUTO_DESKTOP_SHORTCUTS=true
+
+# Voz — se ele responde mas não fala, rode: itachi-capoeira audiotest
+# TTS_ENGINE: auto | kokoro | system (espeak-ng, robótica porém imediata) | off
+# AUDIO_PLAYER: auto | sounddevice | system (system = paplay/pw-play/aplay, toca no que o Ubuntu usa)
+# AUDIO_OUT_DEVICE: vazio = padrão; ou o número/nome mostrado por: python -m sounddevice
+# TTS_SYNTH_TIMEOUT: segundos que o Kokoro pode levar por frase antes de cair para a voz do sistema
+TTS_ENGINE="auto"
+AUDIO_PLAYER="auto"
+AUDIO_OUT_DEVICE=""
+TTS_SYNTH_TIMEOUT=45
+
+# Nuvem do Ollama (plano gratuito, com chave de API): não edite aqui — use 'itachi-capoeira cloud setup'
+# ou o painel Sistema da interface. A chave fica em config/secrets.txt, nunca neste arquivo.

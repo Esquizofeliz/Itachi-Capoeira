@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="description" content="Itachi Capoeira — assistente de mesa (microfone e áudio do PC pelo celular via USB). Inspirado no projeto Jarvis.">
+  <title>Itachi Capoeira | Assistente de Mesa</title>
+  <!--
+    Itachi Capoeira — extensão de microfone e áudio (assistente de mesa).
+    Inspirado no projeto Jarvis Assistant (zapprosite): https://github.com/zapprosite/jarvis-assistant
+
+    Como funciona: o celular fica ligado ao PC por cabo USB. Com `adb reverse`, o celular acessa
+    http://localhost:8765/mobile/ (servidor do próprio PC). O microfone do celular grava a sua voz,
+    o PC transcreve e responde, e a resposta toca no alto-falante do celular.
+    Para ligar tudo de uma vez:  itachi-capoeira-gui --usb
+  -->
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden; background: #000;
+      font-family: 'Courier New', Courier, monospace; color: #0f0;
+      touch-action: manipulation; user-select: none; -webkit-user-select: none;
+    }
+    body { height: 100vh; height: 100dvh; }
+
+    #canvas-container { position: fixed; inset: 0; z-index: 1; }
+    canvas { display: block; width: 100%; height: 100%; }
+
+    /* Layout em coluna: cabeçalho · máscara · estado · botão discreto no pé da tela */
+    #app {
+      position: fixed; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center;
+      padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px calc(env(safe-area-inset-bottom, 0px) + 14px);
+      pointer-events: none;
+    }
+    #brand { text-align: center; text-shadow: 0 0 10px rgba(0, 255, 70, 0.55); }
+    #brand h1 { font-size: 17px; letter-spacing: 4px; font-weight: 700; color: #0f0; }
+    #brand p { margin-top: 3px; font-size: 10px; letter-spacing: 1px; color: rgba(0, 255, 70, 0.55); }
+
+    #stage { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; min-height: 0; }
+    #mask-container {
+      width: min(280px, 70vw); height: auto; will-change: transform, filter;
+      transition: opacity 1s ease;  pointer-events: auto; cursor: pointer;
+    }
+    body.on #mask-container { opacity: 0.7; }
+    #mask-svg { width: 100%; height: auto; filter: drop-shadow(0 0 15px rgba(0, 255, 70, 0.4)); }
+
+    /* Animação para fazer os olhos de sharingan rodarem mantendo o clip-path original */
+    .sharingan-rotating {
+    
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: rotateSharingan 4s linear infinite;
+    }
+    @keyframes rotateSharingan {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    #info {
+      width: 100%; max-width: 420px; text-align: center; min-height: 92px; padding: 10px 8px 8px; border-radius: 10px;
+      background: rgba(0, 0, 0, 0.55); text-shadow: 0 0 4px #000, 0 0 10px #000;
+    }
+    #state { font-size: 13px; letter-spacing: 3px; text-shadow: 0 0 8px rgba(0, 255, 70, 0.6); }
+    #meter { width: 140px; height: 3px; margin: 9px auto 8px; background: rgba(0, 255, 70, 0.15); border-radius: 2px; overflow: hidden; }
+    #meter-fill { width: 0%; height: 100%; background: #0f0; box-shadow: 0 0 8px #0f0; transition: width 0.08s linear; }
+    #caption {
+      font-size: 12px; line-height: 1.45; color: rgba(150, 255, 180, 0.85);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.9em;
+    }
+
+    /* Botões de pílula (iniciar / desconectar): mesmo visual, o de desconectar é mais discreto */
+    .pill-btn {
+      pointer-events: auto; background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(0, 255, 0, 0.5); color: #0f0;
+      padding: 12px 26px; border-radius: 30px; font: inherit; font-size: 13px; letter-spacing: 1px; cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    }
+    #start-btn { animation: pulse-tap 1.5s infinite; }
+    #stop-btn { display: none; font-size: 11px; padding: 8px 20px; opacity: 0.45; box-shadow: none; border-color: rgba(0, 255, 0, 0.3); }
+    #stop-btn:active { opacity: 0.9; }
+    body.on #start-btn { display: none; }
+    /* Status do PC + atalhos de controle (somem com o sistema ligado, para não atrapalhar a conversa) */
+    #pc-status { margin-top: 6px; font-size: 10px; letter-spacing: 1px; color: rgba(0, 255, 70, 0.55); min-height: 1.3em; }
+    #pc-status.bad { color: #ff8a8a; }
+    #tools { display: flex; gap: 8px; margin-bottom: 10px; }
+    .mini-btn { font-size: 10px; padding: 8px 12px; letter-spacing: 1px; }
+    body.on #tools { display: none; }
+    body.on #stop-btn { display: block; }
+    .pill-btn:disabled { opacity: 0.5; animation: none; }
+    @keyframes pulse-tap {
+      0% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); }
+      50% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.6); }
+      100% { box-shadow: 0 0 5px rgba(0, 255, 0, 0.2); }
+    }
+
+    /* Modal de conexão (sucesso some em 15 s; erro fica até ser fechado) */
+    #modal {
+      position: fixed; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 16px); transform: translateX(-50%);
+      z-index: 30; width: min(92vw, 380px); padding: 14px 16px; border-radius: 8px; font-size: 13px; line-height: 1.5;
+      background: rgba(0, 20, 5, 0.94); border: 1px solid #0f0; color: #0f0; box-shadow: 0 0 18px rgba(0, 255, 0, 0.4);
+      opacity: 0; visibility: hidden; transition: opacity 0.5s ease-in-out, visibility 0.5s;
+    }
+    #modal.show { opacity: 1; visibility: visible; }
+    #modal.error { background: rgba(25, 0, 0, 0.95); border-color: #f33; color: #ff8a8a; box-shadow: 0 0 18px rgba(255, 50, 50, 0.4); }
+    #modal h2 { font-size: 14px; letter-spacing: 1px; margin-bottom: 6px; }
+    #modal ul { list-style: none; }
+    #modal li { margin: 2px 0; }
+    #modal .hint { margin-top: 8px; font-size: 11px; opacity: 0.85; }
+    #modal .row { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+    #modal button { font: inherit; font-size: 12px; padding: 6px 14px; border-radius: 16px; cursor: pointer; background: transparent; border: 1px solid currentColor; color: inherit; }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container"><canvas id="matrix-canvas"></canvas></div>
+
+  <div id="modal" role="alert" aria-live="assertive"></div>
+
+  <div id="app">
+    <header id="brand">
+      <h1>ITACHI CAPOEIRA</h1>
+      <p>assistente de mesa · inspirado no projeto Jarvis</p>
+      <p id="pc-status"></p>
+    </header>
+
+    <main id="stage">
+      <!-- Máscara do Itachi (SVG) — toque nela para pausar/retomar a escuta -->
+      <div id="mask-container" title="Toque para pausar/retomar a escuta">
+      <svg id="mask-svg" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- 1. OLHO ESQUERDO (Já está perfeito, mantido intacto) -->
+  <image class="sharingan-rotating" href="itachi.png" x="132" y="199" width="64" height="64" preserveAspectRatio="xMidYMid slice" />
+
+  <!-- 2. OLHO DIREITO (Ajustado para a esquerda e para cima) -->
+  <image class="sharingan-rotating" href="itachi.png" x="282" y="203" width="64" height="64" preserveAspectRatio="xMidYMid slice" />
+
+  <!-- 3. O ROSTO DO ITACHI POR CIMA -->
+  <image href="itachi-mobile.png" x="0" y="0" width="500" height="500" preserveAspectRatio="xMidYMid slice" />
+</svg>
+      </div>
+    </main>
+
+    <section id="info">
+      <div id="state">SISTEMA EM ESPERA</div>
+      <div id="meter"><div id="meter-fill"></div></div>
+      <div id="caption"></div>
+    </section>
+
+    <div id="tools">
+      <button id="up-btn" class="pill-btn mini-btn" type="button">LIGAR TUDO NO PC</button>
+      <button id="vt-btn" class="pill-btn mini-btn" type="button">TESTE DE VOZ NO PC</button>
+    </div>
+    <button id="start-btn" class="pill-btn" type="button">INICIAR SISTEMA</button>
+    <button id="stop-btn" class="pill-btn" type="button">DESCONECTAR</button>
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    /* ------------------------------------------------------------------ atalhos de DOM */
+    const $ = id => document.getElementById(id);
+    const canvas = $('matrix-canvas'), ctx = canvas.getContext('2d', { alpha: false });
+    const maskSvg = $('mask-svg'), maskContainer = $('mask-container');
+    const startBtn = $('start-btn'), stopBtn = $('stop-btn');
+    const stateEl = $('state'), meterFill = $('meter-fill'), captionEl = $('caption'), modal = $('modal');
+
+    /* ------------------------------------------------------------------ chuva Matrix */
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ';
+    const fontSize = 16;
+    let drops = [];
+    function resetDrops() { drops = new Array(Math.floor(canvas.width / fontSize)).fill(1); }
+    resetDrops();
+    window.addEventListener('resize', () => { resizeCanvas(); resetDrops(); });
+
+    let audioLevel = 0;            // 0..1 (voz captada); suaviza a animação
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = `rgb(0, ${Math.min(255, Math.floor(180 + audioLevel * 150))}, 70)`;
+      ctx.font = `${fontSize}px monospace`;
+      for (let i = 0; i < drops.length; i++) {
+        const y = drops[i] * fontSize;
+        ctx.fillText(chars.charAt(Math.floor(Math.random() * chars.length)), i * fontSize, y);
+        if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i] += 1 + Math.floor(audioLevel * 3);
+      }
+      requestAnimationFrame(drawMatrix);
+    }
+    drawMatrix();
+
+    function paintLevel(level) {
+      audioLevel = level;
+      maskContainer.style.transform = `scale(${1 + level * 0.15})`;
+      maskSvg.style.filter = `drop-shadow(0 0 ${12 + level * 40}px rgba(0, 255, 70, ${0.5 + level * 0.5}))`;
+      meterFill.style.width = Math.round(level * 100) + '%';
+    }
+
+    /* ------------------------------------------------------------------ estado e textos */
+    const STATES = {
+      idle: 'SISTEMA EM ESPERA', connecting: 'CONECTANDO...', listening: 'OUVINDO', paused: 'ESCUTA PAUSADA',
+      sending: 'ENVIANDO AO PC...', thinking: 'PROCESSANDO NO PC...', speaking: 'FALANDO', lost: 'SEM CONEXÃO USB'
+    };
+    let state = 'idle';
+    function setState(s) { state = s; stateEl.textContent = STATES[s] || s; }
+    function caption(text) { captionEl.textContent = text || ''; }
+
+    /* ------------------------------------------------------------------ modal (sucesso: some em 15 s) */
+    const MODAL_SECONDS = 15;
+    let modalTimer = null;
+    function hideModal() { clearTimeout(modalTimer); modalTimer = null; modal.classList.remove('show'); }
+    function showModal({ ok, title, lines, hint, retry }) {
+      clearTimeout(modalTimer);
+      modal.className = ok ? '' : 'error';
+      modal.innerHTML = '';
+      const h = document.createElement('h2'); h.textContent = title; modal.appendChild(h);
+      const ul = document.createElement('ul');
+      for (const l of lines) {
+        const li = document.createElement('li'); li.textContent = (l.ok ? '✔ ' : '✖ ') + l.text;
+        ul.appendChild(li);
+      }
+      modal.appendChild(ul);
+      if (hint) { const p = document.createElement('p'); p.className = 'hint'; p.textContent = hint; modal.appendChild(p); }
+      if (!ok) {
+        const row = document.createElement('div'); row.className = 'row';
+        if (retry) { const b = document.createElement('button'); b.textContent = 'TENTAR DE NOVO'; b.onclick = () => { hideModal(); startSystem(); }; row.appendChild(b); }
+        const c = document.createElement('button'); c.textContent = 'FECHAR'; c.onclick = hideModal; row.appendChild(c);
+        modal.appendChild(row);
+      }
+      void modal.offsetWidth;                       // reinicia a transição
+      modal.classList.add('show');
+      if (ok) modalTimer = setTimeout(hideModal, MODAL_SECONDS * 1000);   // sucesso: some depois de 15 s
+    }
+
+    /* ------------------------------------------------------------------ tela cheia / tela acesa */
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+    async function enterFullscreen() {
+      const el = document.documentElement, req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (!req || fsEl()) return;
+      try { await req.call(el, { navigationUI: 'hide' }); } catch (e) { /* o navegador pode recusar: segue sem tela cheia */ }
+    }
+    async function exitFullscreen() {
+      const ex = document.exitFullscreen || document.webkitExitFullscreen;
+      if (ex && fsEl()) { try { await ex.call(document); } catch (e) { /* ignora */ } }
+    }
+    let wakeLock = null;
+    async function keepAwake() {
+      try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) { wakeLock = null; }
+    }
+    function releaseAwake() { try { if (wakeLock) wakeLock.release(); } catch (e) { /* ignora */ } wakeLock = null; }
+    document.addEventListener('visibilitychange', () => { if (session && document.visibilityState === 'visible') keepAwake(); });
+
+    /* ------------------------------------------------------------------ conexão com o PC (via USB) */
+    async function api(path, opt = {}, timeoutMs = 4000) {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeoutMs);
+      try {
+        const r = await fetch(path, { ...opt, signal: opt.signal || ctl.signal, cache: 'no-store' });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+        return j;
+      } finally { clearTimeout(t); }
+    }
+    const pingPC = () => api('/api/mobile/ping');
+
+    /* status do PC e atalhos: ligar atalhos+daemon e testar a voz sem tocar no teclado */
+    const pcStatus = $('pc-status'), upBtn = $('up-btn'), vtBtn = $('vt-btn');
+    async function refreshPc() {
+      try {
+        const i = await pingPC();
+        pcStatus.className = '';
+        pcStatus.textContent = 'PC · ' + (i.cloud ? 'IA NA NUVEM' : 'IA LOCAL') + ' · ' + (i.daemon ? 'DAEMON ATIVO' : 'DAEMON DESLIGADO');
+      } catch (e) { pcStatus.className = 'bad'; pcStatus.textContent = 'PC não encontrado pelo USB'; }
+    }
+    async function pcAct(action, btn, busyText) {
+      const label = btn.textContent; btn.disabled = true; btn.textContent = busyText;
+      try {
+        const r = await api('/api/system', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) }, 15000);
+        caption(r.started ? 'Teste de voz iniciado — ouça no PC.' : (r.message || (r.ok ? 'Feito.' : 'Não foi possível.')));
+      } catch (e) { caption('PC: ' + e.message); }
+      btn.disabled = false; btn.textContent = label; refreshPc();
+    }
+    upBtn.addEventListener('click', () => pcAct('up', upBtn, 'LIGANDO...'));
+    vtBtn.addEventListener('click', () => pcAct('audiotest', vtBtn, 'TESTANDO...'));
+    refreshPc(); setInterval(() => { if (!session) refreshPc(); }, 8000);
+
+    /* ------------------------------------------------------------------ áudio: microfone → VAD → WAV */
+    const TARGET_SR = 16000, FRAME = 480;              // quadros de 30 ms a 16 kHz
+    const START_FRAMES = 3, PREROLL_FRAMES = 10, SILENCE_MS = 1300, MAX_SECONDS = 30, MIN_VOICED_FRAMES = 8;
+    let session = null;     // { stream, actx, node, sink, abort, healthTimer }
+    let listening = false;  // false enquanto envia/espera/fala (evita o assistente ouvir a si mesmo)
+    let userPaused = false;
+
+    const vad = { buf: [], pending: [], pre: [], speaking: false, voiced: 0, silent: 0, total: 0, voicedTotal: 0, floor: 0.004 };
+    function vadReset() { Object.assign(vad, { buf: [], pending: [], pre: [], speaking: false, voiced: 0, silent: 0, total: 0, voicedTotal: 0 }); }
+
+    function makeResampler(inRate, outRate) {
+      const ratio = inRate / outRate; let acc = 0, cnt = 0, phase = 0;
+      return input => {
+        const out = [];
+        for (let i = 0; i < input.length; i++) {
+          acc += input[i]; cnt++; phase += 1;
+          if (phase >= ratio) { out.push(acc / cnt); acc = 0; cnt = 0; phase -= ratio; }
+        }
+        return out;
+      };
+    }
+
+    function rms(f) { let s = 0; for (let i = 0; i < f.length; i++) s += f[i] * f[i]; return Math.sqrt(s / f.length); }
+
+    function onSamples(chunk16k) {
+      for (let i = 0; i < chunk16k.length; i++) vad.buf.push(chunk16k[i]);
+      while (vad.buf.length >= FRAME) onFrame(vad.buf.splice(0, FRAME));
+    }
+
+    function onFrame(frame) {
+      const level = rms(frame);
+      if (!listening) { paintLevel(audioLevel * 0.8); return; }
+      paintLevel(Math.min(1, level * 18));
+      const threshold = Math.max(0.012, vad.floor * 3);
+      const voiced = level > threshold;
+      if (!voiced && !vad.speaking) vad.floor = vad.floor * 0.95 + level * 0.05;      // piso de ruído adaptativo
+
+      if (!vad.speaking) {
+        vad.pre.push(frame); if (vad.pre.length > PREROLL_FRAMES) vad.pre.shift();
+        vad.voiced = voiced ? vad.voiced + 1 : 0;
+        if (vad.voiced >= START_FRAMES) {
+          vad.speaking = true; vad.silent = 0; vad.pending = vad.pre.slice(); vad.pre = [];
+          vad.total = vad.pending.length; vad.voicedTotal = vad.voiced;
+        }
+        return;
+      }
+      vad.pending.push(frame); vad.total++;
+      if (voiced) { vad.silent = 0; vad.voicedTotal++; } else vad.silent += 30;
+      if (vad.silent >= SILENCE_MS || vad.total * 30 >= MAX_SECONDS * 1000) finishUtterance();
+    }
+
+    function finishUtterance() {
+      const frames = vad.pending, enough = vad.voicedTotal >= MIN_VOICED_FRAMES;
+      vadReset();
+      if (!enough || !frames.length) return;            // barulho curto: ignora
+      const n = frames.length * FRAME, pcm = new Int16Array(n);
+      let k = 0;
+      for (const f of frames) for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); pcm[k++] = v < 0 ? v * 32768 : v * 32767; }
+      sendUtterance(encodeWav(pcm, TARGET_SR));
+    }
+
+    function encodeWav(pcm, sr) {
+      const buf = new ArrayBuffer(44 + pcm.length * 2), v = new DataView(buf);
+      const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+      str(0, 'RIFF'); v.setUint32(4, 36 + pcm.length * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      str(36, 'data'); v.setUint32(40, pcm.length * 2, true);
+      new Int16Array(buf, 44).set(pcm);
+      return new Blob([buf], { type: 'audio/wav' });
+    }
+
+    /* ------------------------------------------------------------------ envio ao PC + resposta tocando no celular */
+    async function sendUtterance(blob) {
+      if (!session) return;
+      listening = false; setState('sending'); caption('');
+      const mySession = session;
+      try {
+        setState('thinking');
+        const r = await api('/api/mobile/voice', { method: 'POST', headers: { 'Content-Type': 'audio/wav' }, body: blob, signal: mySession.abort.signal }, 300000);
+        if (session !== mySession) return;
+        if (r.text) caption('Você: ' + r.text + (r.reply ? '\n' + r.reply : ''));
+        if (r.audio || r.speak) { setState('speaking'); await playReply(r); }
+      } catch (e) {
+        if (session !== mySession || e.name === 'AbortError' && !session) return;
+        if (/Failed to fetch|NetworkError|aborted|Load failed/i.test(e.message || e.name)) { connectionLost(); return; }
+        caption('Erro: ' + e.message);          // ex.: Ollama offline, Whisper não instalado, PC ocupado
+      }
+      if (session === mySession) resumeListening();
+    }
+
+    function playReply(r) {
+      if (r.audio) {
+        return new Promise(async resolve => {
+          try {
+            const bin = atob(r.audio), bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const buf = await session.actx.decodeAudioData(bytes.buffer);
+            const src = session.actx.createBufferSource();
+            src.buffer = buf; src.connect(session.actx.destination);
+            session.playing = src;
+            src.onended = () => { session && (session.playing = null); resolve(); };
+            src.start();
+          } catch (e) { caption('Não consegui tocar o áudio: ' + e.message); resolve(); }
+        });
+      }
+      return new Promise(resolve => {                    // PC sem Kokoro: usa a voz do próprio celular
+        if (!('speechSynthesis' in window)) return resolve();
+        const u = new SpeechSynthesisUtterance(r.speak);
+        u.lang = 'pt-BR'; u.onend = u.onerror = () => resolve();
+        speechSynthesis.cancel(); speechSynthesis.speak(u);
+      });
+    }
+
+    function resumeListening() {
+      vadReset();
+      if (userPaused) { setState('paused'); listening = false; return; }
+      listening = true; setState('listening');
+    }
+
+    function togglePause() {
+      if (!session || state === 'sending' || state === 'thinking' || state === 'speaking' || state === 'lost') return;
+      userPaused = !userPaused;
+      resumeListening();
+    }
+    maskContainer.addEventListener('click', togglePause);
+
+    /* ------------------------------------------------------------------ perda e volta da conexão USB */
+    function connectionLost() {
+      if (!session) return;
+      listening = false; setState('lost'); vadReset();
+      showModal({
+        ok: false, title: 'CONEXÃO USB PERDIDA',
+        lines: [{ ok: false, text: 'O celular não está alcançando o PC.' }],
+        hint: 'Confira o cabo e rode no PC:  adb reverse tcp:8765 tcp:8765   (ou: itachi-capoeira-gui --usb). Eu reconecto sozinho.'
+      });
+    }
+    function startHealthCheck(s) {
+      s.healthTimer = setInterval(async () => {
+        if (session !== s) return;
+        try {
+          await pingPC();
+          if (state === 'lost') { hideModal(); resumeListening(); caption('Conexão USB restabelecida.'); }
+        } catch (e) { if (state !== 'lost' && state !== 'thinking') connectionLost(); }
+      }, 5000);
+    }
+
+    /* ------------------------------------------------------------------ iniciar / desconectar */
+    let starting = false;
+    async function startSystem() {
+      if (session || starting) return;
+      starting = true; startBtn.disabled = true; setState('connecting'); hideModal();
+      enterFullscreen();                                  // precisa acontecer dentro do toque do usuário
+      const result = { mic: { ok: false, text: '' }, pc: { ok: false, text: '' } };
+      let stream = null, actx = null;
+
+      // 1) PC pelo USB
+      try {
+        const info = await pingPC();
+        result.pc = { ok: true, text: 'PC conectado por USB (' + (info.name || 'Itachi Capoeira') + ')' };
+      } catch (e) {
+        result.pc.text = 'PC não encontrado pelo USB (' + (e.name === 'AbortError' ? 'sem resposta' : e.message) + ')';
+      }
+
+      // 2) Microfone + áudio do celular
+      try {
+        if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+          throw new Error('o microfone só funciona em conexão segura — abra http://localhost:8765/mobile/ pelo USB');
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+        const AC = window.AudioContext || window.webkitAudioContext;
+        try { actx = new AC({ sampleRate: TARGET_SR, latencyHint: 'interactive' }); } catch (e) { actx = new AC({ latencyHint: 'interactive' }); }
+        await actx.resume();
+        result.mic = { ok: true, text: 'Microfone e áudio do celular ativados' };
+      } catch (e) {
+        const denied = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError');
+        result.mic.text = 'Microfone indisponível: ' + (denied ? 'permissão negada (libere o microfone no navegador)' : (e.message || e.name));
+      }
+
+      const lines = [result.mic, result.pc];
+      if (!(result.mic.ok && result.pc.ok)) {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        if (actx) actx.close().catch(() => {});
+        await exitFullscreen();
+        starting = false; startBtn.disabled = false; setState('idle');
+        showModal({
+          ok: false, title: 'NÃO FOI POSSÍVEL CONECTAR', lines, retry: true,
+          hint: result.pc.ok ? '' : 'No PC rode:  itachi-capoeira-gui --usb   (ou: adb reverse tcp:8765 tcp:8765). Ative a Depuração USB no celular.'
+        });
+        return;
+      }
+
+      // 3) Liga a captura
+      const s = session = { stream, actx, abort: new AbortController(), playing: null };
+      const src = actx.createMediaStreamSource(stream);
+      const sink = actx.createGain(); sink.gain.value = 0; sink.connect(actx.destination);   // mantém o grafo "puxando" áudio, mudo
+      const down = makeResampler(actx.sampleRate, TARGET_SR);
+      try {
+        if (!actx.audioWorklet) throw new Error('sem AudioWorklet');
+        const code = "class Cap extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true;}}registerProcessor('cap',Cap);";
+        const url = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
+        await actx.audioWorklet.addModule(url); URL.revokeObjectURL(url);
+        s.node = new AudioWorkletNode(actx, 'cap');
+        s.node.port.onmessage = ev => onSamples(down(ev.data));
+      } catch (e) {                                       // navegadores sem AudioWorklet
+        s.node = actx.createScriptProcessor(2048, 1, 1);
+        s.node.onaudioprocess = ev => onSamples(down(ev.inputBuffer.getChannelData(0)));
+      }
+      src.connect(s.node); s.node.connect(sink);
+
+      document.body.classList.add('on');
+      userPaused = false; vadReset(); starting = false; startBtn.disabled = false;
+      keepAwake(); startHealthCheck(s); resumeListening(); caption('');
+      showModal({ ok: true, title: 'CONEXÃO ESTABELECIDA', lines, hint: 'Pode falar — estou ouvindo. (Some em ' + MODAL_SECONDS + ' s)' });
+    }
+
+    async function stopSystem() {
+      const s = session; session = null; listening = false; userPaused = false;
+      if (s) {
+        clearInterval(s.healthTimer);
+        try { s.abort.abort(); } catch (e) { /* ignora */ }
+        try { if (s.playing) s.playing.stop(); } catch (e) { /* ignora */ }
+        try { s.node && s.node.disconnect(); } catch (e) { /* ignora */ }
+        s.stream.getTracks().forEach(t => t.stop());
+        s.actx.close().catch(() => {});
+      }
+      try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) { /* ignora */ }
+      vadReset(); releaseAwake(); hideModal();
+      document.body.classList.remove('on');
+      paintLevel(0); caption(''); setState('idle');
+      await exitFullscreen();
+    }
+
+    startBtn.addEventListener('click', startSystem);
+    stopBtn.addEventListener('click', stopSystem);
+
+    // Atalho no desktop: F alterna a tela cheia
+    window.addEventListener('keydown', e => {
+      if (e.key === 'f' || e.key === 'F') { fsEl() ? exitFullscreen() : enterFullscreen(); }
+    });
+  })();
+  </script>
+</body>
+</html>

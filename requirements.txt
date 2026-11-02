@@ -1,0 +1,9 @@
+# Dependências do Itachi Capoeira (o instalador cria um .venv e instala tudo isto)
+numpy>=1.24
+psutil>=5.9
+sounddevice>=0.4.6
+soundfile>=0.12
+mss>=9.0
+Pillow>=10.0
+faster-whisper>=1.0.3
+kokoro-onnx>=0.4.9

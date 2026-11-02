@@ -1,0 +1,6 @@
+# Atalhos globais. No Linux o instalador usa --no-deps (evita compilar o 'evdev', que só é
+# necessário para o backend uinput e exige compilador + headers do kernel).
+pynput>=1.7.6
+six
+python-xlib; sys_platform == "linux"
+pyobjc-framework-Quartz; sys_platform == "darwin"

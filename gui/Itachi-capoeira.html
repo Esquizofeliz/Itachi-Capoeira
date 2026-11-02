@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Itachi Capoeira · Interface do Itachi Capoeira</title>
+<style>
+  /* ============================================================
+     RESET E VARIÁVEIS  (Estética Futurista Bossa-Cyber / Capoeira)
+     ============================================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cinnabar: #C1272D;          /* Vermelho Sharingan */
+    --vermilion: #E34234;
+    --gold: #FFCC00;              /* Amarelo Ouro Brasil */
+    --gold-bright: #FFE600;
+    --jade: #00A859;              /* Verde Bandeira Brasil */
+    --jade-bright: #00FF7F;       /* Verde Neon */
+    --brazil-blue: #002776;        /* Azul Celeste */
+    --jade-dark: #006b3a;        /* Verde escuro (fundos/degradês) */
+    --ink: #050b07;               /* Fundo Escuro com toque verde escuro */
+    --ink-2: #09140d;
+    --panel: rgba(10, 22, 14, 0.85);
+    --border-gold: rgba(255, 204, 0, 0.35);
+    --border-gold-strong: rgba(255, 204, 0, 0.7);
+    --border-green: rgba(0, 255, 127, 0.4);
+    --text-main: #f0f7f2;         /* Verde/Creme Suave */
+    --text-dim: #92b59d;
+    --text-faint: #4e6e58;
+    --font-display: 'Segoe UI', 'Trebuchet MS', 'Arial', sans-serif;
+    --font-body: 'Segoe UI', 'Noto Sans', sans-serif;
+    --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+  }
+
+  html { height: 100%; }
+
+  body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(0, 168, 89, 0.18) 0%, transparent 45%),
+      radial-gradient(circle at 85% 85%, rgba(255, 204, 0, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at center, #0b1c11 0%, #050b07 65%, #020503 100%);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 13px;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Marcas d'água brasileiras no fundo */
+  .bg-marks { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .bg-mark {
+    position: absolute;
+    font-family: var(--font-display);
+    font-size: 200px;
+    color: rgba(0, 255, 127, 0.025);
+    font-weight: bold;
+    user-select: none;
+    line-height: 1;
+  }
+  .bg-mark-1 { top: 2%; left: 1%; }
+  .bg-mark-2 { bottom: 3%; right: 1%; }
+  .bg-mark-3 { top: 35%; right: 2%; font-size: 140px; color: rgba(255, 204, 0, 0.03); }
+  .bg-mark-4 { bottom: 25%; left: 2%; font-size: 140px; color: rgba(193, 39, 45, 0.04); }
+
+  /* Scanlines estilo HUD Cyber */
+  .scanlines {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    background: repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0,20,10,0.15) 2px, rgba(0,20,10,0.15) 4px);
+    opacity: 0.6;
+  }
+
+  /* ============================================================
+     TOPBAR
+     ============================================================ */
+  .topbar {
+    height: 68px;
+    border-bottom: 2px solid var(--jade);
+    background: rgba(5, 11, 7, 0.94);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    gap: 16px;
+    z-index: 20;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 255, 127, 0.15);
+  }
+  .topbar::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--jade-bright), transparent);
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-seal {
+    width: 48px; height: 48px;
+    font-size: 2rem; /* Aumenta o tamanho do emoji da bandeira */
+    background: linear-gradient(135deg, var(--jade-dark), var(--ink));
+    border: 2px solid var(--gold-bright);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 255, 127, 0.4), inset 0 0 8px rgba(0,0,0,0.5);
+  }
+  .brand-text h1 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--gold-bright);
+    text-shadow: 0 0 10px rgba(255, 230, 0, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-text h1 .tag {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(0, 168, 89, 0.3);
+    border: 1px solid var(--jade-bright);
+    color: var(--jade-bright);
+    text-shadow: 0 0 6px rgba(0, 255, 127, 0.5);
+  }
+  .brand-text p {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    background: rgba(9, 20, 13, 0.8);
+    padding: 4px;
+    border-radius: 6px;
+    border: 1px solid var(--border-green);
+  }
+  .tab {
+    padding: 6px 14px;
+    border-radius: 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab:hover { color: var(--gold-bright); border-color: var(--border-gold); }
+  .tab.active {
+    background: linear-gradient(135deg, rgba(0, 168, 89, 0.35), rgba(255, 204, 0, 0.2));
+    border-color: var(--gold-bright);
+    color: var(--gold-bright);
+    box-shadow: 0 0 12px rgba(0, 255, 127, 0.3);
+  }
+
+  /* Status topo direito */
+  .status { display: flex; align-items: center; gap: 12px; }
+  .status-text { text-align: right; }
+  .clock {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--gold-bright);
+    text-shadow: 0 0 8px rgba(255, 230, 0, 0.6);
+    letter-spacing: 1px;
+  }
+  .storage {
+    font-size: 10px;
+    color: var(--jade-bright);
+    letter-spacing: 1px;
+    margin-top: 1px;
+  }
+  .icon-btn {
+    width: 38px; height: 38px;
+    background: rgba(9, 20, 13, 0.9);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    color: var(--gold);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--gold-bright); color: var(--gold-bright); box-shadow: 0 0 12px rgba(255, 204, 0, 0.5); }
+
+  /* ============================================================
+     GRID PRINCIPAL
+     ============================================================ */
+  .main-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    gap: 12px;
+    padding: 12px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+  }
+  .col-left, .col-center, .col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .col-left, .col-right { overflow-y: auto; }
+
+
+  /* ============================================================
+     PAINÉIS HUD
+     ============================================================ */
+  .hud-panel {
+    background: var(--panel);
+    border: 1px solid var(--border-green);
+    border-radius: 6px;
+    padding: 12px;
+    position: relative;
+    box-shadow:
+      inset 0 0 30px rgba(0, 255, 127, 0.05),
+      0 4px 20px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+  }
+  /* Cantos duplos Verde e Amarelo */
+  .hud-panel::before, .hud-panel::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    pointer-events: none;
+  }
+  .hud-panel::before {
+    top: -1px; left: -1px;
+    border-top: 2px solid var(--gold-bright);
+    border-left: 2px solid var(--gold-bright);
+  }
+  .hud-panel::after {
+    bottom: -1px; right: -1px;
+    border-bottom: 2px solid var(--jade-bright);
+    border-right: 2px solid var(--jade-bright);
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-green);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .panel-header h2 {
+    font-family: var(--font-display);
+    font-size: 12px;
+    color: var(--gold-bright);
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-shadow: 0 0 6px rgba(255, 204, 0, 0.4);
+  }
+  .panel-header h2 .cn {
+    color: var(--jade-bright);
+    font-weight: 900;
+    font-size: 11px;
+    text-shadow: 0 0 6px rgba(0, 255, 127, 0.6);
+  }
+  .pill {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  .pill.jade { background: rgba(0, 255, 127, 0.15); color: var(--jade-bright); border: 1px solid var(--jade-bright); }
+  .pill.gold { background: rgba(255, 204, 0, 0.15); color: var(--gold-bright); border: 1px solid var(--gold-bright); }
+  .pill.cinnabar { background: rgba(193, 39, 45, 0.25); color: #ff8a8a; border: 1px solid var(--cinnabar); }
+
+  /* Métricas */
+  .metric { margin-bottom: 10px; }
+  .metric:last-child { margin-bottom: 0; }
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .metric-row span:first-child { color: var(--text-main); }
+  .mono { font-family: var(--font-mono); }
+  .gold { color: var(--gold-bright); text-shadow: 0 0 6px rgba(255, 230, 0, 0.4); }
+  .jade-color { color: var(--jade-bright); text-shadow: 0 0 6px rgba(0, 255, 127, 0.4); }
+  .cinnabar-color { color: #ff8a8a; text-shadow: 0 0 6px rgba(193, 39, 45, 0.5); }
+
+  .bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(5, 11, 7, 0.9);
+    border: 1px solid var(--border-green);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+    border-radius: 2px;
+  }
+  .bar-vram { background: linear-gradient(90deg, var(--jade-bright), var(--gold-bright)); box-shadow: 0 0 10px rgba(0, 255, 127, 0.5); }
+  .bar-cpu { background: linear-gradient(90deg, var(--gold), #00A859); }
+  .bar-temp { background: linear-gradient(90deg, var(--jade), var(--cinnabar)); }
+  .bar-success { background: var(--jade-bright); box-shadow: 0 0 8px rgba(0, 255, 127, 0.5); }
+  .bar-pending { background: var(--gold-bright); box-shadow: 0 0 8px rgba(255, 204, 0, 0.5); }
+
+  /* ============================================================
+     NÚCLEO / SHARINGAN
+     ============================================================ */
+  .core-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 12px;
+    min-height: 260px;
+  }
+  .core-panel .panel-header {
+    position: absolute;
+    top: 12px; left: 12px; right: 12px;
+    margin-bottom: 0;
+  }
+  .core-visual {
+    position: relative;
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 160px; height: 160px;
+  }
+  .core-visual::before, .core-visual::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px dashed rgba(0, 255, 127, 0.4);
+    pointer-events: none;
+  }
+  .core-visual::before { animation: spin 20s linear infinite; }
+  .core-visual::after { inset: 12px; border-style: solid; border-color: rgba(255, 204, 0, 0.4); animation: spin-rev 15s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin-rev { to { transform: rotate(-360deg); } }
+  @keyframes pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 8px rgba(193, 39, 45, 0.7)); }
+    50% { filter: drop-shadow(0 0 24px rgba(255, 204, 0, 0.9)); }
+  }
+  .sharingan-img {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    animation: spin 12s linear infinite, pulse-glow 3s ease-in-out infinite;
+    z-index: 2;
+  }
+  .core-label {
+    margin-top: 14px;
+    text-align: center;
+  }
+  .core-label .cn-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    color: var(--gold-bright);
+    letter-spacing: 3px;
+    text-shadow: 0 0 12px rgba(255, 230, 0, 0.8);
+    font-weight: 900;
+  }
+  .core-label .sub {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--jade-bright);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .core-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  /* Botões genéricos */
+  .btn {
+    padding: 6px 10px;
+    font-family: var(--font-display);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-weight: 700;
+  }
+  .btn-gold {
+    background: rgba(255, 204, 0, 0.15);
+    border-color: var(--gold);
+    color: var(--gold-bright);
+  }
+  .btn-gold:hover { background: rgba(255, 204, 0, 0.3); box-shadow: 0 0 12px rgba(255, 204, 0, 0.5); }
+  .btn-cinnabar {
+    background: rgba(193, 39, 45, 0.2);
+    border-color: var(--cinnabar);
+    color: #ff8a8a;
+  }
+  .btn-cinnabar:hover { background: rgba(193, 39, 45, 0.35); box-shadow: 0 0 12px rgba(193, 39, 45, 0.5); }
+  .btn-jade {
+    background: rgba(0, 255, 127, 0.15);
+    border-color: var(--jade-bright);
+    color: var(--jade-bright);
+  }
+  .btn-jade:hover { background: rgba(0, 255, 127, 0.3); box-shadow: 0 0 12px rgba(0, 255, 127, 0.4); }
+  .btn-solid-gold {
+    background: var(--gold);
+    border-color: var(--gold-bright);
+    color: #050b07;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+  }
+  .btn-solid-gold:hover { background: var(--gold-bright); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.3); }
+
+  /* Áudio Spectrum */
+  .spectrum {
+    height: 60px;
+    background: rgba(5, 11, 7, 0.9);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 4px;
+    overflow: hidden;
+  }
+  .spectrum .sp-bar {
+    flex: 1;
+    background: linear-gradient(to top, var(--jade-dark), var(--jade-bright), var(--gold-bright));
+    border-radius: 1px 1px 0 0;
+    transition: height 0.12s ease;
+    min-height: 10%;
+    box-shadow: 0 0 4px rgba(0, 255, 127, 0.5);
+  }
+
+  /* ============================================================
+     ABAS CONTEÚDO
+     ============================================================ */
+  .tab-content {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tab-content.active-tab { display: flex; }
+
+  /* Cards de modelos */
+  .model-card {
+    background: rgba(5, 11, 7, 0.85);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+  .model-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: var(--gold);
+    opacity: 0.8;
+    border-radius: 4px 0 0 4px;
+  }
+  .model-card.installed::before { background: var(--jade-bright); }
+  .model-card.pending::before { background: var(--text-faint); }
+
+  .model-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .model-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--gold-bright);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .model-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; line-height: 1.4; }
+  .model-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .model-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+
+  .status-tag {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .status-tag.installed { background: rgba(0, 255, 127, 0.15); color: var(--jade-bright); border: 1px solid var(--jade-bright); }
+  .status-tag.pending { background: rgba(255, 204, 0, 0.15); color: var(--gold-bright); border: 1px solid var(--gold-bright); }
+  .status-tag.vram { background: rgba(193, 39, 45, 0.2); color: #ff8a8a; border: 1px solid var(--cinnabar); }
+
+  /* Barra de estatísticas do downloader */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    background: rgba(5, 11, 7, 0.8);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-green);
+    margin-top: 8px;
+  }
+  .stat-block .stat-label {
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+  }
+  .stat-block .stat-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: bold;
+    margin-top: 2px;
+    display: block;
+  }
+
+  /* Scroll customizado */
+  .scroll-area { overflow-y: auto; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: rgba(5, 11, 7, 0.9); }
+  ::-webkit-scrollbar-thumb { background: rgba(0, 255, 127, 0.4); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 204, 0, 0.8); }
+
+  /* ============================================================
+     VISÃO
+     ============================================================ */
+  .vision-feed {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: var(--ink);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .vision-feed img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+  }
+  .vision-actions {
+    position: absolute;
+    bottom: 8px; right: 8px;
+    display: flex;
+    gap: 6px;
+  }
+  .vision-actions label, .vision-actions button {
+    backdrop-filter: blur(6px);
+    background: rgba(5, 11, 7, 0.9);
+    border: 1px solid var(--border-gold);
+    border-radius: 3px;
+    padding: 5px 10px;
+    font-family: var(--font-display);
+    font-size: 10px;
+    color: var(--gold-bright);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .vision-actions label:hover, .vision-actions button:hover {
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 12px rgba(255, 204, 0, 0.5);
+  }
+  .vision-actions .analyze {
+    background: rgba(0, 168, 89, 0.4);
+    border-color: var(--jade-bright);
+    color: #a3ffcb;
+  }
+  .vision-actions .analyze:hover { background: rgba(0, 168, 89, 0.7); }
+
+  .translation-box {
+    background: rgba(5, 11, 7, 0.9);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    padding: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-top: 10px;
+  }
+  .translation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 255, 127, 0.2);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-faint);
+  }
+  .translation-header .arrow { color: var(--gold-bright); font-size: 14px; font-weight: bold; }
+  .translation-header .target { color: var(--jade-bright); font-weight: 700; }
+  .translation-body { color: var(--text-main); line-height: 1.6; min-height: 60px; }
+  .translation-body .en { color: #9cb8ff; margin-bottom: 6px; }
+  .translation-body .pt { color: var(--jade-bright); }
+  .translation-body .pt strong { color: #5eff9d; }
+
+  /* ============================================================
+     CÓDIGO
+     ============================================================ */
+  .code-block {
+    background: rgba(5, 11, 7, 0.7);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #d4f8e2;
+    overflow: auto;
+    flex: 1;
+    line-height: 1.6;
+    white-space: pre;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ============================================================
+     CHAT
+     ============================================================ */
+  .chat-panel {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+  }
+  .chat-stream {
+    flex: 1;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .msg { display: flex; gap: 8px; align-items: flex-start; }
+  .msg.user { flex-direction: row-reverse; }
+  .avatar {
+    width: 26px; height: 26px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .avatar.bot { background: rgba(0, 168, 89, 0.3); border: 1px solid var(--jade-bright); color: var(--jade-bright); }
+  .avatar.user { background: rgba(255, 204, 0, 0.2); border: 1px solid var(--gold); color: var(--gold-bright); }
+  .bubble {
+    max-width: 85%;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .bubble.bot {
+    background: rgba(0, 168, 89, 0.1);
+    border: 1px solid rgba(0, 255, 127, 0.3);
+    color: var(--text-main);
+  }
+  .bubble.user {
+    background: rgba(255, 204, 0, 0.1);
+    border: 1px solid rgba(255, 204, 0, 0.35);
+    color: var(--text-main);
+  }
+  .bubble .who {
+    font-family: var(--font-display);
+    font-size: 9px;
+    color: var(--gold-bright);
+    letter-spacing: 1.5px;
+    margin-bottom: 3px;
+    font-weight: 800;
+  }
+
+  .chat-input {
+    display: flex;
+    gap: 6px;
+  }
+  .chat-input input {
+    flex: 1;
+    background: rgba(5, 11, 7, 0.95);
+    border: 1px solid var(--border-green);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 12px;
+    outline: none;
+  }
+  .chat-input input::placeholder { color: var(--text-faint); }
+  .chat-input input:focus { border-color: var(--gold-bright); box-shadow: 0 0 10px rgba(255, 204, 0, 0.3); }
+  .chat-input button {
+    padding: 0 16px;
+    background: var(--gold);
+    border: 1px solid var(--gold-bright);
+    border-radius: 4px;
+    color: #050b07;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    transition: all 0.2s;
+  }
+  .chat-input button:hover { background: var(--gold-bright); box-shadow: 0 0 15px rgba(255, 204, 0, 0.6); }
+
+  /* ============================================================
+     LOGS E STORAGE
+     ============================================================ */
+  .logs-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .logs-stream {
+    flex: 1;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.8;
+    padding-right: 4px;
+    min-height: 150px;
+  }
+  .logs-stream .log-line { color: var(--text-dim); }
+  .logs-stream .log-line .time { color: var(--gold); }
+  .logs-stream .log-line.highlight { color: var(--gold-bright); font-weight: 600; }
+  .logs-stream .log-line.highlight .time { color: #ff8a8a; }
+  .logs-stream .log-line.success { color: var(--jade-bright); }
+
+  .storage-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(5, 11, 7, 0.7);
+    border: 1px solid var(--border-green);
+    border-radius: 3px;
+    padding: 6px 10px;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  .footer {
+    height: 32px;
+    border-top: 2px solid var(--jade);
+    background: rgba(5, 11, 7, 0.95);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    z-index: 20;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .footer .left { display: flex; gap: 24px; }
+  .footer .right { color: var(--jade-bright); display: flex; align-items: center; gap: 6px; }
+  .footer .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--jade-bright);
+    box-shadow: 0 0 8px var(--jade-bright);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  /* Utilitários */
+  .hidden { display: none !important; }
+  .ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ctrl-grid .btn{justify-content:center}
+  /* painel Sistema: atalhos globais · nuvem · voz */
+  .sys-rows{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;font-size:11px}
+  .sys-row{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--border-gold);padding-bottom:3px}
+  .sys-row span:first-child{color:var(--text-dim);letter-spacing:1px}.sys-row span:last-child{text-align:right;color:var(--gold-bright)}
+  .sys-row .ok{color:var(--jade-bright)}.sys-row .bad{color:#ff8a8a}
+  #cloud-box{margin-top:10px;padding:8px;border:1px solid var(--border-gold);border-radius:3px;font-size:11px;line-height:1.5;color:var(--text-dim)}
+  #cloud-box input[type=password]{width:100%;margin:6px 0;background:rgba(5,11,7,.8);border:1px solid var(--border-gold);color:var(--text-main);padding:6px 8px;border-radius:3px}
+  #cloud-box a{color:var(--gold-bright)}#cloud-box label{display:flex;gap:6px;align-items:flex-start;margin:4px 0}
+  #sys-msg{margin-top:8px;font-size:11px;color:var(--gold-bright);white-space:pre-line}
+
+  /* Itachi dentro da caixa embaixo da Central de Download */
+  #tab-downloader > .scroll-area {
+    background-image:
+      linear-gradient(rgba(5, 11, 7, 0.18), rgba(5, 11, 7, 0.18)),
+      url('Itachi-em-Ginga-Brasileira.png');
+    opacity: 0.7;
+    background-size: auto, contain;
+    background-position: center, center;
+    background-repeat: no-repeat, no-repeat;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Marcas d'água Brasileiras -->
+  <div class="bg-marks" aria-hidden="true">
+    <span class="bg-mark bg-mark-1">🇧🇷</span>
+    <span class="bg-mark bg-mark-2">⚡</span>
+    <span class="bg-mark bg-mark-3">🪘</span>
+    <span class="bg-mark bg-mark-4">👁️</span>
+  </div>
+
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- TOPBAR -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-seal">
+      🇧🇷
+    </div>
+    <div class="brand-text">
+      <h1>ITACHI CAPOEIRA<span class="tag">· BRASIL</span></h1>
+      <p id="brand-sub">Interface local do Itachi Capoeira &middot; 100% off-line</p>
+    </div>
+  </div>
+
+    <nav class="tabs">
+      <button id="tab-btn-downloader" class="tab active" onclick="switchTab('downloader')">
+        <span data-icon="download" data-size="14"></span> Gerenciador de I.As
+      </button>
+      <button id="tab-btn-vision" class="tab" onclick="switchTab('vision')">
+        <span data-icon="eye" data-size="14"></span> Visão PT-BR
+      </button>
+      <button id="tab-btn-script" class="tab" onclick="switchTab('script')">
+        <span data-icon="terminal" data-size="14"></span> Comandos
+      </button>
+    </nav>
+
+    <div class="status">
+      <div class="status-text">
+        <div id="clock-display" class="clock">00:00:00</div>
+        <div id="storage-footprint" class="storage">Modelos: -- GB</div>
+      </div>
+      <button id="mute-sfx-btn" class="icon-btn" title="Silenciar sons do HUD">
+        <span id="sound-icon" data-icon="volume" data-size="18"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <main class="main-grid">
+
+    <!-- COLUNA ESQUERDA -->
+    <aside class="col-left">
+
+      <div class="hud-panel">
+        <div class="panel-header">
+          <h2><span data-icon="activity" data-size="14"></span> Recursos <span class="cn">· BRA</span></h2>
+          <span id="gpu-pill" class="pill jade">GPU</span>
+        </div>
+
+        <div class="metric">
+          <div class="metric-row">
+            <span id="vram-label">GPU VRAM</span>
+            <span id="vram-val" class="mono gold">--</span>
+          </div>
+          <div class="bar"><div id="vram-bar" class="bar-fill bar-vram" style="width:0%"></div></div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-row">
+            <span>CARGA DE CPU</span>
+            <span id="cpu-val" class="mono gold">--</span>
+          </div>
+          <div class="bar"><div id="cpu-bar" class="bar-fill bar-cpu" style="width:0%"></div></div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-row">
+            <span>TEMPERATURA DA GPU</span>
+            <span id="temp-val" class="mono jade-color">--</span>
+          </div>
+          <div class="bar"><div id="temp-bar" class="bar-fill bar-temp" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Núcleo / Sharingan -->
+      <div class="hud-panel core-panel">
+        <div class="panel-header">
+          <h2><span data-icon="power" data-size="14"></span> Núcleo <span class="cn">· GINGA</span></h2>
+          <span id="core-pill" class="pill cinnabar">CONECTANDO...</span>
+        </div>
+
+        <div class="core-visual">
+          <img src="itachi.png" class="sharingan-img" alt="Sharingan">
+        </div>
+
+        <div class="core-label">
+          <div class="cn-title">ITACHI CAPOEIRA</div>
+          <div id="core-sub" class="sub">ITACHI CAPOEIRA · LOCAL</div>
+        </div>
+
+        <div class="core-actions">
+          <button class="btn btn-gold" onclick="downloadAllModels()">
+            <span data-icon="download" data-size="12"></span> BAIXAR TUDO
+          </button>
+          <button class="btn btn-cinnabar" onclick="clearVRAM()">
+            <span data-icon="trash" data-size="12"></span> LIMPAR VRAM
+          </button>
+        </div>
+      </div>
+
+      <!-- Controles -->
+      <div class="hud-panel">
+        <div class="panel-header">
+          <h2><span data-icon="power" data-size="14"></span> Controles <span class="cn">· RODA</span></h2>
+          <span id="hk-pill" class="pill gold">ATALHOS</span>
+        </div>
+        <div class="ctrl-grid">
+          <button class="btn btn-gold" onclick="trig('screen')"><span data-icon="scan" data-size="12"></span> TELA <span id="hk-screen"></span></button>
+          <button class="btn btn-gold" onclick="trig('voice')"><span data-icon="mic" data-size="12"></span> VOZ→COLAR <span id="hk-voice"></span></button>
+          <button class="btn btn-gold" onclick="trig('talk')"><span data-icon="message" data-size="12"></span> CONVERSA <span id="hk-talk"></span></button>
+          <button class="btn btn-cinnabar" onclick="trig('stop')"><span data-icon="power" data-size="12"></span> PARAR <span id="hk-stop"></span></button>
+        </div>
+      </div>
+
+      <!-- Sistema: atalhos globais, nuvem e voz -->
+      <div class="hud-panel">
+        <div class="panel-header">
+          <h2><span data-icon="activity" data-size="14"></span> Sistema <span class="cn">· ATALHOS</span></h2>
+          <span id="sys-pill" class="pill gold">--</span>
+        </div>
+        <div id="sys-rows" class="sys-rows"></div>
+        <div class="ctrl-grid">
+          <button class="btn btn-solid-gold" onclick="sysAct('up')"><span data-icon="power" data-size="12"></span> LIGAR TUDO</button>
+          <button class="btn btn-gold" onclick="sysAct('shortcuts_install')"><span data-icon="scan" data-size="12"></span> ATALHOS</button>
+          <button class="btn btn-gold" onclick="sysAct('audiotest')"><span data-icon="mic" data-size="12"></span> TESTE DE VOZ</button>
+          <button class="btn btn-gold" onclick="toggleCloud()"><span data-icon="download" data-size="12"></span> NUVEM...</button>
+        </div>
+        <div id="cloud-box" class="hidden">
+          <div>Use os modelos hospedados do Ollama (plano gratuito) com uma chave de API. Crie a chave em
+            <a href="https://ollama.com/settings/keys" target="_blank" rel="noopener noreferrer">ollama.com/settings/keys</a>.
+            Voz e fala continuam locais.</div>
+          <input id="cloud-key" type="password" placeholder="Chave de API (oculta)" autocomplete="off" spellcheck="false">
+          <label><input type="checkbox" id="cloud-ok"> Entendo: o texto das conversas e os prints da tela serão enviados ao ollama.com.</label>
+          <div class="ctrl-grid">
+            <button class="btn btn-solid-gold" onclick="cloudEnable()">ATIVAR NUVEM</button>
+            <button class="btn btn-cinnabar" onclick="sysAct('cloud_off')">VOLTAR AO LOCAL</button>
+          </div>
+          <div class="ctrl-grid" style="margin-top:8px"><button class="btn btn-gold" onclick="sysAct('restart_daemon')">REINICIAR DAEMON</button></div>
+        </div>
+        <div id="sys-msg"></div>
+      </div>
+
+      <!-- Áudio -->
+      <div class="hud-panel">
+        <div class="panel-header">
+          <h2><span data-icon="mic" data-size="14"></span> Áudio <span class="cn">· BERIMBAU</span></h2>
+          <span class="pill jade">KOKORO / WHISPER</span>
+        </div>
+        <div id="spectrum-bars" class="spectrum"></div>
+      </div>
+
+    </aside>
+
+    <!-- COLUNA CENTRAL -->
+    <section class="col-center">
+
+      <!-- ABA 1: DOWNLOADER -->
+      <div id="tab-downloader" class="tab-content active-tab">
+        <div class="hud-panel" style="flex-shrink:0;">
+          <div class="panel-header">
+            <h2><span data-icon="folder" data-size="14"></span> Central de Download <span class="cn">· MODELOS</span></h2>
+            <span class="pill gold">OLLAMA + data/models</span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-block">
+              <span class="stat-label">Em andamento</span>
+              <span id="dl-speed" class="stat-value gold">0</span>
+            </div>
+            <div class="stat-block">
+              <span class="stat-label">Instalados</span>
+              <span id="models-count" class="stat-value jade-color">-- / --</span>
+            </div>
+            <div class="stat-block">
+              <span class="stat-label">Disco Livre</span>
+              <span id="disk-free" class="stat-value cinnabar-color">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-panel scroll-area" style="flex:1;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div id="model-cards" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: VISÃO -->
+      <div id="tab-vision" class="tab-content">
+        <div class="hud-panel" style="flex:1; overflow-y:auto;">
+          <div class="panel-header">
+            <h2><span data-icon="scan" data-size="14"></span> Visão · imagem ou tela <span class="cn">· MANDINGA</span></h2>
+            <span id="vision-pill" class="pill cinnabar">MODELO DE VISÃO</span>
+          </div>
+
+          <div class="vision-feed">
+            <img id="vision-feed-img" alt="Feed da câmera" />
+            
+            <div class="vision-actions">
+              <label for="image-upload">
+                <span data-icon="upload" data-size="12"></span> ENVIAR IMAGEM
+              </label>
+              <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+              <input type="text" id="vision-question" placeholder="Pergunta (opcional)" style="flex:1;min-width:120px;background:rgba(5,11,7,.8);border:1px solid var(--border-gold);color:var(--text-main);padding:6px 8px;border-radius:3px;">
+              <button class="analyze" onclick="runVision(null)"><span data-icon="scan" data-size="12"></span> CAPTURAR TELA</button>
+              <button class="analyze" onclick="analyzeUpload()">
+                <span data-icon="sparkles" data-size="12"></span> ANALISAR IMAGEM
+              </button>
+            </div>
+          </div>
+
+          <div class="translation-box">
+            <div class="translation-header">
+              <span>PERGUNTA</span>
+              <span class="arrow">➜</span>
+              <span class="target">RESPOSTA DO MODELO (PT-BR)</span>
+            </div>
+            <div id="vision-text-output" class="translation-body"><p class="pt">Envie uma imagem ou capture a tela. O modelo responde em português.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 3: SCRIPT -->
+      <div id="tab-script" class="tab-content">
+        <div class="hud-panel" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+          <div class="panel-header">
+            <h2><span data-icon="terminal" data-size="14"></span> Script &amp; Comandos <span class="cn">· COMANDOS</span></h2>
+            <button class="btn btn-gold" onclick="copyScriptCode()">
+              <span data-icon="copy" data-size="12"></span> COPIAR
+            </button>
+          </div>
+          <pre id="code-block" class="code-block">Carregando...</pre>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="hud-panel chat-panel">
+        <div class="panel-header" style="margin-bottom:0;">
+          <h2><span data-icon="message" data-size="14"></span> Comandos do Sistema <span class="cn">· CHAT</span></h2>
+          <span id="chat-pill" class="pill jade">MODO LOCAL</span>
+        </div>
+
+        <div id="chat-stream" class="chat-stream">
+          <div class="msg">
+            <div class="avatar bot"><span data-icon="bot" data-size="14"></span></div>
+            <div class="bubble bot">
+              <div class="who">ITACHI CAPOEIRA</div>
+              <p>Interface conectada ao Itachi Capoeira. Converse por texto, gerencie os modelos ou use os controles de tela e voz no ritmo do berimbau.</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="command-form" class="chat-input" onsubmit="handleUserCommand(event)">
+          <input type="text" id="user-input" placeholder="Pergunte algo ou use comandos: 'baixar modelos', 'limpar vram'..." autocomplete="off">
+          <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);white-space:nowrap;"><input type="checkbox" id="speak-toggle"> FALAR</label>
+          <button type="submit">
+            ENVIAR <span data-icon="send" data-size="12"></span>
+          </button>
+        </form>
+      </div>
+
+    </section>
+
+    <!-- COLUNA DIREITA -->
+    <aside class="col-right">
+
+      <div class="hud-panel logs-panel">
+        <div class="panel-header">
+          <h2><span data-icon="file" data-size="14"></span> Logs <span class="cn">· SISTEMA</span></h2>
+          <span class="pill gold">AO VIVO</span>
+        </div>
+        <div id="system-logs" class="logs-stream"></div>
+      </div>
+
+      <div class="hud-panel">
+        <div class="panel-header">
+          <h2><span data-icon="drive" data-size="14"></span> Disco <span class="cn">· DISCO</span></h2>
+        </div>
+        <div id="disk-list"></div>
+      </div>
+
+      <div class="hud-panel">
+        <div class="panel-header">
+          <h2><span data-icon="file" data-size="14"></span> Memória <span class="cn">· MEMÓRIA</span></h2>
+          <span id="mem-count" class="pill gold">0</span>
+        </div>
+        <button class="btn btn-cinnabar" onclick="clearMemory()"><span data-icon="trash" data-size="12"></span> LIMPAR MEMÓRIA</button>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="left">
+      <span><span id="foot-proto">ITACHI-CAPOEIRA-LOCAL-OFFLINE</span></span>
+      <span><span id="foot-gpu">--</span></span>
+    </div>
+    <div class="right">
+      <span class="dot"></span>
+      <span><span id="foot-state">AGUARDANDO BACKEND</span></span>
+    </div>
+  </footer>
+
+<script>
+  const ICONS = {
+    cpu: '<rect x="4" y="4" width="16" height="16" rx="1"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+    eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+    terminal: '<polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>',
+    volume: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+    mute: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>',
+    activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    mic: '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>',
+    folder: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+    drive: '<line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    bot: '<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4M8 16h.01M16 16h.01"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+    sparkles: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/>',
+    scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="3" y1="12" x2="21" y2="12"/>',
+    message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    power: '<path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>',
+    arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>'
+  };
+
+  function icon(name, size = 16) {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      style="display:inline-block;vertical-align:middle;">${ICONS[name] || ''}</svg>`;
+  }
+  function renderIcons(root = document) {
+    root.querySelectorAll('[data-icon]').forEach(el => {
+      el.innerHTML = icon(el.dataset.icon, parseInt(el.dataset.size) || 16);
+    });
+  }
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let S = null, sound = true, ac = null, visionImg = null, bot = 'ITACHI CAPOEIRA';
+
+  function beep(f = 800, d = 0.08, t = 'sine') {
+    if (!sound) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.05, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + d);
+      o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+    } catch (e) {}
+  }
+  $('mute-sfx-btn').addEventListener('click', () => {
+    sound = !sound; $('sound-icon').innerHTML = icon(sound ? 'volume' : 'mute', 18);
+  });
+  setInterval(() => { $('clock-display').textContent = new Date().toLocaleTimeString('pt-BR'); }, 1000);
+
+  const bars = [];
+  for (let i = 0; i < 22; i++) { const b = document.createElement('div'); b.className = 'sp-bar'; $('spectrum-bars').appendChild(b); bars.push(b); }
+  setInterval(() => {
+    const on = S && (S.busy || S.recording);
+    bars.forEach(b => { b.style.height = (on ? Math.random() * 85 + 12 : 5 + Math.random() * 6) + '%'; });
+  }, 150);
+
+  function switchTab(n) {
+    beep(1000, 0.05);
+    ['downloader', 'vision', 'script'].forEach(t => {
+      $('tab-' + t).classList.toggle('active-tab', t === n);
+      $('tab-btn-' + t).classList.toggle('active', t === n);
+    });
+  }
+
+  async function api(path, body) {
+    const opt = body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+    const r = await fetch(path, opt);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || r.statusText);
+    return j;
+  }
+
+  /* status / render */
+  function setPill(el, txt, cls) { el.textContent = txt; el.className = 'pill ' + cls; }
+  function card(m) {
+    const j = m.job, run = j && j.state === 'running', err = j && j.state === 'error';
+    const st = m.installed ? (m.loaded ? ['VRAM', 'vram'] : ['INSTALADO', 'installed']) : [m.kind === 'stt' ? 'SOB DEMANDA' : 'PENDENTE', 'pending'];
+    const pct = run ? j.pct : (m.installed ? 100 : 0);
+    const txt = run ? `${pct}% ${esc(j.msg || '')}` : err ? 'Erro: ' + esc(j.msg) : (m.installed ? 'Pronto' : 'Não instalado');
+    let b = '';
+    const cl = S.cloud && m.kind === 'llm';
+    if (cl) st[0] = m.installed ? 'NUVEM' : 'AUSENTE';
+    if (m.kind === 'llm' && m.installed && !cl)
+      b += m.loaded ? `<button class="btn btn-cinnabar" onclick="act('unload','${m.id}')">DESALOCAR VRAM</button>`
+                    : `<button class="btn btn-gold" onclick="act('load','${m.id}')">CARREGAR EM VRAM</button>`;
+    if (cl) b += `<button class="btn btn-jade" disabled>${m.installed ? 'DISPONÍVEL NA NUVEM' : 'NÃO ENCONTRADO NA NUVEM'}</button>`;
+    else b += m.installed ? `<button class="btn btn-jade" disabled>${icon('check', 12)} CONCLUÍDO</button>`
+      : `<button class="btn btn-solid-gold" ${run ? 'disabled' : ''} onclick="act('pull','${m.id}')">${icon('download', 12)} ${run ? 'BAIXANDO...' : (m.kind === 'stt' ? 'PRÉ-CARREGAR' : 'BAIXAR LOCALMENTE')}</button>`;
+    return `<div class="model-card ${m.installed ? 'installed' : 'pending'}">
+      <div class="model-head"><div><div class="model-title">${esc(m.label)}</div><p class="model-desc">${esc(m.desc)}</p></div>
+      <span class="status-tag ${st[1]}">${st[0]}</span></div>
+      <div class="model-meta"><span>${m.size_gb ? m.size_gb + ' GB' : '—'} &middot; ${esc(m.name)}</span><span class="gold">${txt}</span></div>
+      <div class="bar"><div class="bar-fill ${m.installed ? 'bar-success' : 'bar-pending'}" style="width:${pct}%"></div></div>
+      <div class="model-actions">${b}</div></div>`;
+  }
+  function render() {
+    const s = S, g = s.gpu;
+    bot = (s.name || 'Itachi Capoeira').toUpperCase();
+    if (g.total_mb) {
+      const used = g.total_mb - g.free_mb, pct = Math.round(used / g.total_mb * 100);
+      $('vram-val').textContent = `${(used / 1024).toFixed(1)} / ${(g.total_mb / 1024).toFixed(1)} GB (${pct}%)`;
+      $('vram-bar').style.width = pct + '%'; $('vram-label').textContent = 'VRAM · ' + g.name; $('gpu-pill').textContent = g.backend.toUpperCase();
+      $('foot-gpu').textContent = `GPU: ${g.name}`;
+    } else {
+      $('vram-val').textContent = 'sem GPU compatível'; $('vram-bar').style.width = '0%'; $('gpu-pill').textContent = 'CPU';
+      $('foot-gpu').textContent = 'MODO CPU';
+    }
+    $('cpu-val').textContent = Math.round(s.cpu) + '%'; $('cpu-bar').style.width = s.cpu + '%';
+    $('temp-val').textContent = g.temp == null ? 'N/D' : `${g.temp}°C (${g.temp > g.temp_limit ? 'Alto' : 'Ideal'})`;
+    $('temp-bar').style.width = (g.temp || 0) + '%';
+    setPill($('core-pill'), s.ollama ? (s.cloud ? 'NUVEM ONLINE' : 'OLLAMA ONLINE') : (s.cloud ? 'NUVEM OFFLINE' : 'OLLAMA OFFLINE'), s.ollama ? 'jade' : 'cinnabar');
+    $('core-sub').textContent = `${bot} · ${s.daemon_pid ? 'DAEMON ATIVO' : 'SOB DEMANDA'}`;
+    setPill($('chat-pill'), s.busy ? (s.recording ? 'OUVINDO...' : 'PROCESSANDO...') : (s.cloud ? 'MODO NUVEM' : 'MODO LOCAL'), s.busy ? 'gold' : 'jade');
+    for (const k in s.hotkeys) $('hk-' + k).textContent = s.hotkeys[k].replace(/[<>]/g, '').toUpperCase();
+    const done = s.models.filter(m => m.installed).length, run = s.models.filter(m => m.job && m.job.state === 'running').length;
+    $('models-count').textContent = `${done} / ${s.models.length}`; $('dl-speed').textContent = run;
+    $('disk-free').textContent = s.disk_free_gb + ' GB';
+    $('storage-footprint').textContent = `Modelos: ${s.models_gb} GB`;
+    $('model-cards').innerHTML = s.models.map(card).join('');
+    $('disk-list').innerHTML = s.models.map(m => `<div class="storage-item"><span class="name">${esc(m.label)}</span>
+      <span class="size" style="color:var(${m.installed ? '--jade-bright' : '--gold-bright'})">${m.size_gb ? m.size_gb + ' GB' : (m.installed ? 'OK' : 'Pendente')}</span></div>`).join('');
+    $('mem-count').textContent = s.memory;
+    $('foot-state').textContent = s.ollama ? (done === s.models.length ? 'MODELOS PRONTOS' : 'MODELOS PENDENTES') : 'OLLAMA OFFLINE';
+    $('brand-sub').textContent = `Interface local do Itachi Capoeira v${s.version} · ` + (s.cloud ? 'IA na nuvem do Ollama (voz local)' : '100% off-line');
+    $('foot-proto').textContent = s.cloud ? 'ITACHI-CAPOEIRA-NUVEM-OLLAMA' : 'ITACHI-CAPOEIRA-LOCAL-OFFLINE';
+  }
+  async function refresh() {
+    try { S = await api('/api/status'); render(); }
+    catch (e) { setPill($('core-pill'), 'BACKEND OFFLINE', 'cinnabar'); $('brand-sub').textContent = 'Backend offline — rode: itachi-capoeira-gui'; }
+  }
+  async function refreshLogs() {
+    try {
+      const { lines } = await api('/api/logs'), el = $('system-logs'), stick = el.scrollTop + el.clientHeight >= el.scrollHeight - 30;
+      el.innerHTML = lines.map(l => `<div class="log-line${/✅|🎉/.test(l) ? ' success' : ''}">${esc(l)}</div>`).join('');
+      if (stick) el.scrollTop = el.scrollHeight;
+    } catch (e) {}
+  }
+  function note(msg) {
+    const el = $('system-logs'), d = document.createElement('div');
+    d.className = 'log-line highlight'; d.textContent = `[${new Date().toTimeString().split(' ')[0]}] ${msg}`;
+    el.appendChild(d); el.scrollTop = el.scrollHeight;
+  }
+
+  /* ações */
+  async function act(action, id) {
+    beep(1000, 0.06);
+    try { await api('/api/models', { action, id }); } catch (e) { note('❌ ' + e.message); }
+    refresh();
+  }
+  const downloadAllModels = () => act('pull_all');
+  const clearVRAM = () => act('unload_all');
+  async function trig(name) {
+    beep(900, 0.06);
+    try { const r = await api('/api/trigger', { name }); note(`Gatilho '${name}' enviado (${r.via === 'daemon' ? 'daemon' : 'local'}).`); }
+    catch (e) { note('❌ ' + e.message); }
+    setTimeout(refresh, 400);
+  }
+  /* sistema: atalhos globais · nuvem · teste de voz */
+  let SYS = null, lastJob = '';
+  const row = (k, v, cls) => `<div class="sys-row"><span>${k}</span><span class="${cls || ''}">${v}</span></div>`;
+  function renderSys() {
+    const s = SYS; if (!s) return;
+    const sc = s.shortcuts, c = s.cloud, j = s.job;
+    const keys = Object.entries(sc.bindings || {}).map(([n, b]) => `${esc(b)}→${esc(n)}`).join(' · ');
+    let atalhos;
+    if (!s.wayland) atalhos = row('ATALHOS', 'teclado global (pynput)', 'ok');
+    else if (sc.registered) atalhos = row('ATALHOS', keys, 'ok');
+    else atalhos = row('ATALHOS', sc.supported ? 'NÃO REGISTRADOS' : 'sem suporte automático', 'bad');
+    let teste = '';
+    if (j) teste = row('TESTE DE VOZ', j.state === 'running' ? 'testando...' : esc(j.msg || j.state), j.state === 'error' || (j.result && !j.result.ok) ? 'bad' : 'ok');
+    $('sys-rows').innerHTML =
+      row('SESSÃO', esc(s.session) + (s.desktop ? ' · ' + esc(s.desktop) : '')) + atalhos +
+      row('DAEMON', s.daemon_pid ? 'PID ' + s.daemon_pid : 'desligado', s.daemon_pid ? 'ok' : 'bad') +
+      row('IA', c.on ? `nuvem · ${esc(c.chat)}` + (c.key ? ` · chave ••••${esc(c.key_tail)}` : ' · SEM CHAVE') : 'local · ' + esc(c.chat), c.on && !c.key ? 'bad' : '') +
+      row('VOZ', `${esc(s.audio.engine)} · player ${esc(s.audio.player)} · saída ${esc(s.audio.out)}`) + teste;
+    const ready = s.daemon_pid && (!s.wayland || sc.registered);
+    setPill($('sys-pill'), ready ? 'PRONTO' : 'INCOMPLETO', ready ? 'jade' : 'gold');
+    if (j && j.state !== 'running' && j.state + (j.msg || '') !== lastJob) {
+      lastJob = j.state + (j.msg || '');
+      if (j.result) note((j.result.ok ? '✅ ' : '❌ ') + 'Teste de voz (' + (j.result.engine || 'sem motor') + '): ' + (j.msg || ''));
+    }
+  }
+  async function refreshSys() { try { SYS = await api('/api/system'); renderSys(); } catch (e) {} }
+  async function sysAct(action, extra) {
+    beep(900, 0.06);
+    $('sys-msg').textContent = action === 'audiotest' ? 'Testando a voz — você deve ouvir uma frase...' : 'Executando...';
+    try {
+      const r = await api('/api/system', Object.assign({ action }, extra || {}));
+      $('sys-msg').textContent = r.started ? 'Teste iniciado.' : (r.ok ? '✅ ' : '❌ ') + (r.message || '');
+    } catch (e) { $('sys-msg').textContent = '❌ ' + e.message; }
+    refreshSys(); refresh();
+  }
+  function toggleCloud() { $('cloud-box').classList.toggle('hidden'); }
+  async function cloudEnable() {
+    if (!$('cloud-ok').checked) { $('sys-msg').textContent = 'Marque a caixa de ciência: os dados vão para o ollama.com.'; return; }
+    const key = $('cloud-key').value.trim();
+    if (!key) { $('sys-msg').textContent = 'Cole a chave de API (ollama.com/settings/keys).'; return; }
+    await sysAct('cloud_enable', { key });
+    $('cloud-key').value = '';                       // a chave não fica na página
+  }
+  async function clearMemory() {
+    try { await api('/api/memory/clear', {}); note('Memória limpa.'); } catch (e) { note('❌ ' + e.message); }
+    refresh();
+  }
+
+  /* chat */
+  function bubble(user, text) {
+    const c = $('chat-stream'), id = 'b' + Math.random().toString(36).slice(2);
+    c.insertAdjacentHTML('beforeend', `<div class="msg${user ? ' user' : ''}"><div class="avatar ${user ? 'user' : 'bot'}">${icon(user ? 'user' : 'bot', 14)}</div>
+      <div class="bubble ${user ? 'user' : 'bot'}"><div class="who"${user ? ' style="text-align:right;"' : ''}>${user ? 'VOCÊ' : esc(bot)}</div><p id="${id}">${esc(text)}</p></div></div>`);
+    c.scrollTop = c.scrollHeight;
+    return id;
+  }
+  async function handleUserCommand(e) {
+    e.preventDefault();
+    const input = $('user-input'), val = input.value.trim();
+    if (!val) return;
+    beep(900, 0.05); bubble(true, val); input.value = '';
+    const low = val.toLowerCase();
+    if (/baix|download/.test(low)) { downloadAllModels(); return void bubble(false, 'Iniciando o download dos modelos pendentes. Acompanhe em Gerenciador de I.As.'); }
+    if (low.includes('limpar') && low.includes('vram')) { clearVRAM(); return void bubble(false, 'Descarregando os modelos da VRAM.'); }
+    const id = bubble(false, 'Pensando...');
+    try {
+      const r = await api('/api/ask', { text: val, speak: $('speak-toggle').checked });
+      $(id).textContent = r.reply || '(sem resposta)'; beep(1100, 0.1);
+    } catch (err) { $(id).textContent = '❌ ' + err.message; }
+    $('chat-stream').scrollTop = $('chat-stream').scrollHeight; refresh();
+  }
+
+  /* visão */
+  function handleImageUpload(e) {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => { $('vision-feed-img').src = ev.target.result; visionImg = ev.target.result.split(',')[1]; note('Imagem carregada: ' + f.name); };
+    r.readAsDataURL(f);
+  }
+  function analyzeUpload() { if (!visionImg) return note('Envie uma imagem primeiro (ou use CAPTURAR TELA).'); runVision(visionImg); }
+  async function runVision(img) {
+    beep(1100, 0.1, 'triangle');
+    const q = $('vision-question').value, out = $('vision-text-output');
+    out.innerHTML = '<p class="pt">Analisando...</p>';
+    try {
+      const r = await api('/api/vision', { question: q, image: img });
+      if (!img) $('vision-feed-img').src = 'data:image/jpeg;base64,' + r.image;
+      out.innerHTML = `<p class="en"><strong>[Pergunta]:</strong> ${esc(r.question)}</p><p class="pt"><strong>[Resposta]:</strong> ${esc(r.reply)}</p>`;
+    } catch (err) { out.innerHTML = `<p class="pt">❌ ${esc(err.message)}</p>`; }
+    refresh();
+  }
+
+  /* comandos / copiar */
+  function copyScriptCode() {
+    const t = $('code-block').innerText;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => note('Copiado.'), () => {
+      const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); note('Copiado.'); } catch (e) { note('Falha ao copiar.'); } ta.remove();
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    renderIcons(); refresh(); refreshLogs(); refreshSys();
+    setInterval(refresh, 2000); setInterval(refreshLogs, 3000); setInterval(refreshSys, 3000);
+    try { $('code-block').textContent = (await api('/api/script')).text; } catch (e) { $('code-block').textContent = 'Backend offline.'; }
+  });
+</script>
+</body>
+</html>
