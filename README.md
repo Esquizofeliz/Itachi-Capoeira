@@ -90,7 +90,7 @@ Esta versão também recebeu colaboração técnica do **ChatGPT**, em conjunto 
 | 🎭 **Persona configurável** | Nome, voz, humor, formalidade, entusiasmo, paciência, respostas curtas/longas, uso de termos técnicos. |
 | 🩺 **Health check do Ollama** | A cada 15 min confere o Ollama, tenta reiniciá-lo se cair e **descarrega modelos** se a RAM passar de 85% ou sobrar menos de 2 GB. |
 | 🖥️ **Interface gráfica** | Painel web local com recursos, modelos, chat, visão, logs e controles. |
-| 📱 **Celular por USB** | O celular Android vira microfone e alto-falante do PC, sem Wi-Fi e sem nuvem. |
+| 📱 **Celular por USB** | O celular Android vira microfone e alto-falante como assistente, sem Wi-Fi e sem nuve |
 | ☁️ **Nuvem opcional** | Usa modelos hospedados do Ollama (plano gratuito) quando não há GPU. |
 | 🔧 **Diagnóstico e reparo** | `doctor`, `doctor --deep`, `audiotest`, `demo` e `repair-linux.sh`. |
 | 🚀 **Início automático** | Opcional (XDG autostart ou `systemd --user`); **desligado por padrão**. |
